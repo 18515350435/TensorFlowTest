@@ -1,0 +1,37 @@
+import numpy
+import pandas
+name_age = numpy.genfromtxt("aaa.txt", delimiter=" ", dtype=str)
+print(type(name_age))
+print(name_age)
+#
+# m=numpy.array([[1,2,3],
+#                [4,5,3]])
+# n=numpy.array([22,1,2,3])
+# x=numpy.array([[22],[2],[3]])
+# print(m)
+# print(m.shape)
+# print(n.shape)
+# m[1][2]=7.2
+# print(type(m[1][1]))
+# print(m*2)
+# print(m[m%2==1])
+# print(m[:,1]==2)
+# print(m[m[:,1]==2,:])
+# print(m**2)
+# print("m dot x:")
+# print(m.dot(x))
+# print(numpy.dot(m,x))
+# print("reshap")
+# print(m.reshape(3,-1))
+# m.shape=(3,-1)
+# print(m)
+# numpy.sin(numpy.arange(20).reshape(4,5))
+# v = numpy.sin(numpy.arange(20).reshape(4,5))
+# print(v)
+# mv = numpy.argmax(v,axis=0)
+# print(mv)
+# print(v.shape[1])
+# print(range(v.shape[1]))
+# print(v[mv,range(v.shape[1])])
+# # 拿取v中的第0行第1列的元素和第1行第2列的元素（下标从0开始）
+# print(v[[0,1],[1,2]])
