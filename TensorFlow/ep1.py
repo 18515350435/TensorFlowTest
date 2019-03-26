@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+print(range(3))
 # 100个样本训练集
 x_data = np.random.rand(100)
 y_data = x_data*0.1+0.2
