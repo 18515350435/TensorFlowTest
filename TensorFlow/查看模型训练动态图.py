@@ -93,8 +93,9 @@ saver = tf.train.Saver()
 config = projector.ProjectorConfig()
 embed = config.embeddings.add()
 embed.tensor_name = embedding.name
-embed.metadata_path = DIR + 'projector/projector/metadata.tsv'
-embed.sprite.image_path = DIR + 'projector/data/numbers.jpg'
+embed.metadata_path = DIR + 'projector/projector/metadata.tsv'#测试集中对应的前image_num的label值
+embed.sprite.image_path = DIR + 'projector/data/numbers.jpg'#这张图片顺序对应测试集的样本（测试集也是10000个样本）
+# embed.sprite.image_path = DIR + 'projector/data/numberschild.jpg'
 embed.sprite.single_image_dim.extend([28, 28])
 projector.visualize_embeddings(projector_writer, config)
 
@@ -115,3 +116,4 @@ for i in range(max_steps):
 saver.save(sess, DIR + 'projector/projector/a_model.ckpt', global_step=max_steps)
 projector_writer.close
 sess.close
+#dos命令 tensorboard --logdir=C:\Users\admin\PycharmProjects\TensorFlowTestNew\TensorFlow\projector\projector
