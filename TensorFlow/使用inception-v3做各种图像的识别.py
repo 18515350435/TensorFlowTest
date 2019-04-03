@@ -51,23 +51,23 @@ with tf.gfile.FastGFile('inception_pretrain/classify_image_graph_def.pb', 'rb') 
     tf.import_graph_def(graph_def, name='')
 
 with tf.Session() as sess:
-    softmax_tensor = sess.graph.get_tensor_by_name('softmax:0')#其中名字后面的’:’之后接数字为EndPoints索引值（An operation allocates memory for its outputs, which are available on endpoints :0, :1, etc, and you can think of each of these endpoints as a Tensor.），通常情况下为0，因为大部分operation都只有一个输出。
+    softmax_tensor = sess.graph.get_tensor_by_name('softmax:0')#获取模型最后的输出节点叫做softmax，可以从tensorboard中的graph中看到，其中名字后面的’:’之后接数字为EndPoints索引值（An operation allocates memory for its outputs, which are available on endpoints :0, :1, etc, and you can think of each of these endpoints as a Tensor.），通常情况下为0，因为大部分operation都只有一个输出。
     # 遍历目录
     for root, dirs, files in os.walk('images/'):
         for file in files:
-            image_data = tf.gfile.FastGFile(os.path.join(root, file), 'rb').read()
-            predictions = sess.run(softmax_tensor, {'DecodeJpeg/contents:0': image_data})
+            image_data = tf.gfile.FastGFile(os.path.join(root, file), 'rb').read()#Returns the contents of a file as a string.
+            predictions = sess.run(softmax_tensor, {'DecodeJpeg/contents:0': image_data})#tensorboard中的graph中可以看到DecodeJpeg/contents是模型的输入变量名字
             predictions = np.squeeze(predictions)
 
             image_path = os.path.join(root, file)
             print(image_path)
-
-            img = plt.imread(image_path)
+            #展示图片
+            img = plt.imread(image_path)#只能读png图
             plt.imshow(img)
             plt.axis('off')
             plt.show()
 
-            top_k = predictions.argsort()[-5:][::-1]
+            top_k = predictions.argsort()[-5:][::-1]#概率最高的后5个，然后在倒排一下
             node_lookup = NodeLookup()
             for node_id in top_k:
                 human_string = node_lookup.id_to_string(node_id)
