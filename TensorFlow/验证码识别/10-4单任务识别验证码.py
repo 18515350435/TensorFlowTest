@@ -62,7 +62,8 @@ image_batch, label0_batch, label1_batch, label2_batch, label3_batch = tf.train.s
 # 即：alexnet_v2_captcha_multi这个方法是在原本的alexnet_v2进行扩增的方法
 # nets_factory网络工厂中还提供了vgg，谷歌的inception，resnet等各种网络模型不过网络模型较深对数据量和硬件需求较高
 train_network_fn = nets_factory.get_network_fn(
-    'alexnet_v2_captcha_single',
+    'alexnet_v2',
+    # 'alexnet_v2_captcha_single',
     num_classes=CHAR_SET_LEN*4,#指定分类数量是40种,更确切的说是输出神经元数量为  BATCH_SIZE*40
     weight_decay=0.0005,
     is_training=True
