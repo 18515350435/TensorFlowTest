@@ -6,7 +6,7 @@
 # 所以在网上找了个其他版本的retrain.py（https://github.com/googlecodelabs/tensorflow-for-poets-2/blob/master/scripts/retrain.py）能适用于TensorFlow_1.13.1，
 # 并将里面的报错(报错原因是因为新旧版本方法位置变化了，当前使用的TensorFlow是1.13.1)予以修改,也可能不报错，之后得到了一个我自己的myretrain.py执行下边的脚本即可
 # python C:\Users\admin\PycharmProjects\TensorFlowTestNew\TensorFlow\inception利用\myretrain.py --image_dir flower_photos --how_many_training_steps 200 --model_dir C:\Users\admin\PycharmProjects\TensorFlowTestNew\TensorFlow\inception_pretrain --output_graph output_graph.pd --output_labels output_labels.txt
-# --image_dir flower_photos 要分类的图片地址
+# --image_dir flower_photos 要分类的图片目录  鲜花5类图下载地址：http://download.tensorflow.org/example_images/flower_photos.tgz
 # --how_many_training_steps 200 训练周期是200，默认好像是4000
 # --model_dir C:\Users\admin\PycharmProjects\TensorFlowTestNew\TensorFlow\inception_pretrain 我们要使用的模型的所在位置那个tgz包的位置，不指定回去自己下载一个
 # --output_graph output_graph.pd 训练好的我自己的分类模型
