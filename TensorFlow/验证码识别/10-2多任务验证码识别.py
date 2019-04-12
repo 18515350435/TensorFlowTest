@@ -19,7 +19,7 @@ LOOP_TIMES = EPOCHES*TRAIN_NUM//BATCH_SIZE
 TFRECORD_FILE = 'captcha/train.tfrecord'
 
 # 初始学习率
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.0005
 
 # 构成读取数据的tf张量和操作节点  的函数
 def read_and_decode(filename):
@@ -48,7 +48,7 @@ def read_and_decode(filename):
     return image, label0, label1, label2, label3
 # 执行生成构成读取数据的tf张量和操作节点（此时并没有真正的在读数据，知识构成了相关的tf结构）
 image, label0, label1, label2, label3 = read_and_decode(TFRECORD_FILE)
-# 洗牌，将tf_queue顺序打乱，并读取结构为 [image, label0, label1, label2, label3]长度为batch_size的List   的tf结构
+# 洗牌，将tf_queue 队列顺序打乱，并读取结构为 [image, label0, label1, label2, label3]长度为batch_size的List   的tf结构，剩余的减少了并且也是乱的
 image_batch, label0_batch, label1_batch, label2_batch, label3_batch = tf.train.shuffle_batch(
     [image, label0, label1, label2, label3],
     batch_size=BATCH_SIZE,
@@ -142,7 +142,8 @@ with tf.Session() as sess:
             learning_rate = sess.run(lr)
             print("Iter:%d/%d epoch:%d,  Loss:%.3f  Accuracy:%.2f,%.2f,%.2f,%.2f  Learning_rate:%.5f" % (
                 i, LOOP_TIMES, i_epoch, loss_, acc0, acc1, acc2, acc3, learning_rate))
-        if acc0>0.9 and acc1>0.9 and acc2>0.9 and acc3>0.9 and i==LOOP_TIMES-1:
+        # if acc0>0.9 and acc1>0.9 and acc2>0.9 and acc3>0.9 and i==LOOP_TIMES-1:
+        if i==LOOP_TIMES-1:
             saver.save(sess,'captcha/model/crack_captcha.model',global_step=i)
 
     coord.request_stop()

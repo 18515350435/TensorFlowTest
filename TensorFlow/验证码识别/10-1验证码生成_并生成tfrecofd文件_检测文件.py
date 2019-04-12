@@ -199,6 +199,6 @@ def show_tfrecord(tf_name, batch_num, batch_size):
         coord.request_stop()
         coord.join(threads)
 
-show_tfrecord('captcha/train.tfrecord',batch_num=3,batch_size=3)
+show_tfrecord('captcha/train.tfrecord',batch_num=2,batch_size=2)
 
-show_tfrecord('captcha/test.tfrecord', batch_num=3, batch_size=3)
+show_tfrecord('captcha/test.tfrecord', batch_num=2, batch_size=2)

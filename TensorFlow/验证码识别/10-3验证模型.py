@@ -1,20 +1,19 @@
+# coding: UTF-8
 import tensorflow as tf
 from PIL import Image
 from nets import nets_factory
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Åú´Î´óÐ¡
 BATCH_SIZE = 1
-# tfÎÄ¼þ
 TFRECORD_TEST_FILE = 'captcha/test.tfrecord'
 CHAR_SET_LEN = 10
 
 def read_and_decode(filename):
-    # ¸ù¾ÝÎÄ¼þÃûÉú³ÉÒ»¸ö¶ÓÁÐ
+    # ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     filename_queue = tf.train.string_input_producer([filename])
     reader = tf.TFRecordReader()
-    # ·µ»ØÎÄ¼þÃûºÍÎÄ¼þ
+    # ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½
     _, serialized_example = reader.read(filename_queue)
     features = tf.parse_single_example(serialized_example,
                                        features={
@@ -24,17 +23,17 @@ def read_and_decode(filename):
                                            'label2': tf.FixedLenFeature([], tf.int64),
                                            'label3': tf.FixedLenFeature([], tf.int64),
                                        })
-    # »ñÈ¡Í¼Æ¬Êý¾Ý
+    # ï¿½ï¿½È¡Í¼Æ¬ï¿½ï¿½ï¿½ï¿½
     image = tf.decode_raw(features['image'], tf.uint8)
-    # Ã»ÓÐ¾­¹ýÔ¤´¦ÀíµÄ»Ò¶ÈÍ¼
+    # Ã»ï¿½Ð¾ï¿½ï¿½ï¿½Ô¤ï¿½ï¿½ï¿½ï¿½Ä»Ò¶ï¿½Í¼
     image_raw = tf.reshape(image, [224, 224])
-    # tf.train.shuffle_batch±ØÐëÈ·¶¨shape
+    # tf.train.shuffle_batchï¿½ï¿½ï¿½ï¿½È·ï¿½ï¿½shape
     image = tf.reshape(image, [224, 224])
-    # Í¼Æ¬Ô¤´¦Àí
+    # Í¼Æ¬Ô¤ï¿½ï¿½ï¿½ï¿½
     image = tf.cast(image, tf.float32) / 255.0
     image = tf.subtract(image, 0.5)
     image = tf.multiply(image, 2.0)
-    # »ñÈ¡label
+    # ï¿½ï¿½È¡label
     label0 = tf.cast(features['label0'], tf.int32)
     label1 = tf.cast(features['label1'], tf.int32)
     label2 = tf.cast(features['label2'], tf.int32)
@@ -43,15 +42,15 @@ def read_and_decode(filename):
     return image, image_raw, label0, label1, label2, label3
 
 
-# »ñÈ¡Í¼Æ¬Êý¾ÝºÍ±êÇ©
+# ï¿½ï¿½È¡Í¼Æ¬ï¿½ï¿½ï¿½ÝºÍ±ï¿½Ç©
 image, image_raw, label0, label1, label2, label3 = read_and_decode(TFRECORD_TEST_FILE)
 
-# Ê¹ÓÃshuffle_batch¿ÉÒÔËæ»ú´òÂÒ
+# Ê¹ï¿½ï¿½shuffle_batchï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 image_batch, image_raw_batch, label_batch0, label_batch1, label_batch2, label_batch3 = tf.train.shuffle_batch(
     [image, image_raw, label0, label1, label2, label3], batch_size=BATCH_SIZE,
     capacity=1000, min_after_dequeue=200, num_threads=1)
 
-# ¶¨ÒåÍøÂç½á¹¹
+# ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½á¹¹
 train_network_fn = nets_factory.get_network_fn(
     'alexnet_v2_captcha_multi',
     num_classes=CHAR_SET_LEN,
@@ -63,10 +62,10 @@ x = tf.placeholder(tf.float32, [None, 224, 224])
 
 # inputs: a tensor of size [batch_size, height, width, channels]
 X = tf.reshape(x, [BATCH_SIZE, 224, 224, 1])
-# Êý¾ÝÊäÈëÍøÂçµÃµ½Êä³öÖµ
+# ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ãµï¿½ï¿½ï¿½ï¿½Öµ
 logits0, logits1, logits2, logits3, end_points = train_network_fn(X)
 
-# Ô¤²âÖµ
+# Ô¤ï¿½ï¿½Öµ
 predict0 = tf.reshape(logits0, [-1, CHAR_SET_LEN])
 predict0 = tf.argmax(predict0, 1)
 
@@ -88,23 +87,23 @@ with tf.Session() as sess:
     threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
     for i in range(10):
-        # »ñÈ¡Ò»¸öÅú´ÎµÄÊý¾ÝºÍ±êÇ©
+        # ï¿½ï¿½È¡Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Îµï¿½ï¿½ï¿½ï¿½ÝºÍ±ï¿½Ç©
         b_image, b_image_raw, b_label0, b_label1, b_label2, b_label3 = sess.run([image_batch,
                                                                                  image_raw_batch,
                                                                                  label_batch0,
                                                                                  label_batch1,
                                                                                  label_batch2,
                                                                                  label_batch3])
-        # ÏÔÊ¾Í¼Æ¬
+        # ï¿½ï¿½Ê¾Í¼Æ¬
         img = Image.fromarray(b_image_raw[0], 'L')
         plt.imshow(img)
         plt.axis('off')
         plt.show()
-        # ´òÓ¡±êÇ©
+        # ï¿½ï¿½Ó¡ï¿½ï¿½Ç©
         print('label:', b_label0, b_label1, b_label2, b_label3)
-        # Ô¤²â
+        # Ô¤ï¿½ï¿½
         label0, label1, label2, label3 = sess.run([predict0, predict1, predict2, predict3], feed_dict={x: b_image})
-        # ´òÓ¡Ô¤²âÖµ
+        # ï¿½ï¿½Ó¡Ô¤ï¿½ï¿½Öµ
         print('predict:', label0, label1, label2, label3)
     coord.request_stop()
     coord.join(threads)
