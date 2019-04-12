@@ -101,5 +101,5 @@ with tf.Session() as sess:
             # 将二次卷积池化后的结果放入神经网络训练
             sess.run(train_step,feed_dict={x:batch_xs,y:batch_ys,keep_prob:1.0})
         # l_r = sess.run(lr);
-        # acc = sess.run(accuracy,feed_dict={x:mnist.test.images,y:mnist.test.labels,keep_prob:1.0})
-        # print("epoch:",epoch," acc:",acc,"l_r:",l_r)
+        acc = sess.run(accuracy,feed_dict={x:mnist.test.images,y:mnist.test.labels,keep_prob:1.0})
+        print("epoch:",epoch," acc:",acc,"l_r:",l_r)

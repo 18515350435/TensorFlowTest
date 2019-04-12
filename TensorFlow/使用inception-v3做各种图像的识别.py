@@ -67,7 +67,7 @@ with tf.Session() as sess:
             plt.axis('off')
             plt.show()
 
-            top_k = predictions.argsort()[-5:][::-1]#概率最高的后5个，然后在倒排一下
+            top_k = predictions.argsort()[-2:][::-1]#概率最高的后2个，然后在倒排一下
             node_lookup = NodeLookup()
             for node_id in top_k:
                 human_string = node_lookup.id_to_string(node_id)
