@@ -1,3 +1,4 @@
+# 从TensorFlow官网下载，并修改了部分代码
 # encoding=utf8
 from __future__ import absolute_import
 from __future__ import division
