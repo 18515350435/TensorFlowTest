@@ -1,3 +1,4 @@
+# 编写Skip-Gram模型来实现word2vec
 # 从TensorFlow官网下载，并修改了部分代码
 # encoding=utf8
 from __future__ import absolute_import
@@ -114,7 +115,7 @@ def generate_batch(batch_size, num_skips, skip_window):
     labels = np.ndarray(shape=(batch_size, 1), dtype=np.int32)
 
     span = 2 * skip_window + 1  # [ skip_window target skip_window ]
-    buffer = collections.deque(maxlen=span)
+    buffer = collections.deque(maxlen=span)#一个长度最多为span=3的双端队列append()从右侧往里超出3个左侧被挤出，appendleft()相反
     # [ skip_window target skip_window ]
     # [ skip_window target skip_window ]
     # [ skip_window target skip_window ]
@@ -135,6 +136,7 @@ def generate_batch(batch_size, num_skips, skip_window):
                 # 可能先拿到前面的单词也可能先拿到后面的单词
                 target = random.randint(0, span - 1)
             targets_to_avoid.append(target)
+            # 一个skip_window和他周边的num_skips个中的任意一个构成本批次中的一组训练数据
             batch[i * num_skips + j] = buffer[skip_window]
             labels[i * num_skips + j, 0] = buffer[target]
         buffer.append(data[data_index])

@@ -1,3 +1,5 @@
+#使用CNN对自然语言进行处理
+# （电影评论的评论二分类，正面评论和负面评论）
 #coding:utf-8
 import tensorflow as tf
 import numpy as np
@@ -30,12 +32,20 @@ class TextCNN(object):
 
         # Embedding layer
         with tf.device('/cpu:0'), tf.name_scope("embedding"):
+            # W 理解： 词汇量(vocab_size)*128纬的特征向量(embedding_size) ，从前往后依次为词频由高到低的顺序初始化相应词语的128个矢量特征
+            # W是为了使用conv2d图片卷积 强行为每个词语扩增出的一个纬度：拥有128个矢量特征
+            # 如果更高级些我们可以先使用word2vec先训练出各个词汇在整个训练文本中的128个矢量特征所谓新的W（vocab_size * embedding_size）
             self.W = tf.Variable(
                tf.random_uniform([vocab_size, embedding_size], -1.0, 1.0),
                name="W")
-            # [batch_size, sequence_length, embedding_size]
+            '''
+            tf.nn.embedding_lookup函数的用法主要是选取一个张量里面索引对应的元素。
+            tf.nn.embedding_lookup（params, ids）:params可以是张量也可以是数组等，id就是对应的索引，其他的参数不介绍。
+            将ids中的每个位置上的数字num替换为params[num] 结果的纬度会在id的纬度上扩增一个params[num]的shape纬度
+            '''
+            # embedded_chars：[batch_size, sequence_length, embedding_size]
             self.embedded_chars = tf.nn.embedding_lookup(self.W, self.input_x)
-            # 添加一个维度，[batch_size, sequence_length, embedding_size, 1]
+            # 添加一个维度，embedded_chars_expanded：[batch_size, sequence_length, embedding_size, 1]
             self.embedded_chars_expanded = tf.expand_dims(self.embedded_chars, -1)
 
         # Create a convolution + maxpool layer for each filter size
