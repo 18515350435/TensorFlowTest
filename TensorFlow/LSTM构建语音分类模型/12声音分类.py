@@ -40,17 +40,17 @@ tf.flags.DEFINE_float("dev_sample_percentage", .2, "Percentage of the training d
 # 父目录
 tf.flags.DEFINE_string("parent_dir", "audio/", "Data source for the data.")
 # 子目录
-tf.flags.DEFINE_string("tr_sub_dirs", ['fold1/','fold2/','fold3/'], "Data source for the data.")
+tf.flags.DEFINE_list("tr_sub_dirs", ['fold1/','fold2/','fold3/'], "Data source for the data.")
 
 # Model Hyperparameters
 # 第一层输入，MFCC信号
 tf.flags.DEFINE_integer("n_inputs", 40, "Number of MFCCs (default: 40)")
 # cell个数
-tf.flags.DEFINE_string("n_hidden", 300, "Number of cells (default: 300)")
+tf.flags.DEFINE_integer("n_hidden", 300, "Number of cells (default: 300)")
 # 分类数
 tf.flags.DEFINE_integer("n_classes", 10, "Number of classes (default: 10)")
 # 学习率
-tf.flags.DEFINE_integer("lr", 0.005, "Learning rate (default: 0.005)")
+tf.flags.DEFINE_float("lr", 0.005, "Learning rate (default: 0.005)")
 # dropout参数
 tf.flags.DEFINE_float("dropout_keep_prob", 0.5, "Dropout keep probability (default: 0.5)")
 
@@ -68,7 +68,7 @@ tf.flags.DEFINE_integer("num_checkpoints", 2, "Number of checkpoints to store (d
 
 # flags解析
 FLAGS = tf.flags.FLAGS
-FLAGS._parse_flags()
+FLAGS.flag_values_dict()
 
 # 打印所有参数
 print("\nParameters:")
@@ -98,6 +98,7 @@ def extract_features(wav_files):
     
     for wav_file in tqdm(wav_files):
         # 读入音频文件
+        # window下需安装ffmpeg否则报错，下载地址：https://ffmpeg.zeranoe.com/builds/ 解压，配置环境变量bin目录 或者参考：https://blog.csdn.net/u014742995/article/details/84898901
         audio,fs = librosa.load(wav_file)
 
         # 获取音频mfcc特征
@@ -258,8 +259,6 @@ with tf.Session() as sess:
             path = saver.save(sess, "sounds_models/model", global_step=i)
             print("Saved model checkpoint to {}\n".format(path))
 
-
-# In[ ]:
 
 
 
