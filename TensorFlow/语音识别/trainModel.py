@@ -4,7 +4,8 @@ import numpy as np
 import os
 from collections import Counter
 import librosa  # https://github.com/librosa/librosa
-
+# 数据下载地址 http://166.111.134.19:8081/data/thchs30/standalone.html
+# 数据备份地址 Mega: https://mega.nz/#F!idRSjL4A!cnCY0R2NjU77Jr0soe9OgQ    Baidu: http://pan.baidu.com/s/1hqKwE00
 # 训练样本路径
 wav_path = 'data/wav/train'
 label_file = 'data/doc/trans/train.word.txt'
