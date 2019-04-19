@@ -1,5 +1,6 @@
 # coding: utf-8
-import tensorflow as tf  # 0.12
+import tensorflow as tf
+from tensorflow.contrib.layers.python.layers import batch_norm
 import numpy as np
 import os
 from collections import Counter
@@ -99,14 +100,14 @@ def get_next_batches(batch_size):
     # 补零对齐
     for mfcc in batches_wavs:
         while len(mfcc) < wav_max_len:
-            mfcc.append([0]*20) #mfcc变换后每行有20列所以每补充一行就20个0
+            mfcc.append([0]*20) # mfcc 默认的计算长度为20 作为channel length，所以每补充一行就20个0
     for label in batches_labels:
         while len(label) < label_max_len:
             label.append(0) #每段话不够也补充0,0代表无意义的空格（从前边的数据可以观察出来，因为空格最多所以编号是0）
     return batches_wavs, batches_labels
 
 X = tf.placeholder(dtype=tf.float32, shape=[batch_size, None, 20])#此处的None可以用wav_max_len代替
-# mfcc特征属性的有效序列长度，那些补0的行不算在其中
+# sequence_len：mfcc特征属性的有效序列长度，那些补0的行不算在其中
 sequence_len = tf.reduce_sum(tf.cast(tf.not_equal(tf.reduce_sum(X, reduction_indices=2), 0.), tf.int32), reduction_indices=1)
 Y = tf.placeholder(dtype=tf.int32, shape=[batch_size, None])#此处的None可以用label_max_len代替
 
@@ -119,19 +120,27 @@ def conv1d_layer(input_tensor, size, dim, activation, scale, bias):
         if bias:
             b = tf.get_variable('b', [dim], dtype=tf.float32, initializer=tf.constant_initializer(0))
         out = tf.nn.conv1d(input_tensor, W, stride=1, padding='SAME') + (b if bias else 0)
-        if not bias:
-            beta = tf.get_variable('beta', dim, dtype=tf.float32, initializer=tf.constant_initializer(0))
-            gamma = tf.get_variable('gamma', dim, dtype=tf.float32, initializer=tf.constant_initializer(1))
-            mean_running = tf.get_variable('mean', dim, dtype=tf.float32, initializer=tf.constant_initializer(0))
-            variance_running = tf.get_variable('variance', dim, dtype=tf.float32, initializer=tf.constant_initializer(1))
-            mean, variance = tf.nn.moments(out, axes=list(range(len(out.get_shape()) - 1)))
-            def update_running_stat():
-                decay = 0.99
-                update_op = [mean_running.assign(mean_running * decay + mean * (1 - decay)), variance_running.assign(variance_running * decay + variance * (1 - decay))]
-                with tf.control_dependencies(update_op):
-                    return tf.identity(mean), tf.identity(variance)
-                m, v = tf.cond(tf.Variable(False, trainable=False, collections=[tf.GraphKeys.LOCAL_VARIABLES]), update_running_stat, lambda: (mean_running, variance_running))
-                out = tf.nn.batch_normalization(out, m, v, beta, gamma, 1e-8)
+        if not bias:#如果不适用偏置值，就进行特征归一化操作
+            # 特征归一化
+
+            # beta = tf.get_variable('beta', dim, dtype=tf.float32, initializer=tf.constant_initializer(0))
+            # gamma = tf.get_variable('gamma', dim, dtype=tf.float32, initializer=tf.constant_initializer(1))
+            # mean_running = tf.get_variable('mean', dim, dtype=tf.float32, initializer=tf.constant_initializer(0))
+            # variance_running = tf.get_variable('variance', dim, dtype=tf.float32, initializer=tf.constant_initializer(1))
+            # mean, variance = tf.nn.moments(out, axes=list(range(len(out.get_shape()) - 1)))
+            # def update_running_stat():
+            #     decay = 0.99
+            #     # 定义了均值方差指数衰减 见 http://blog.csdn.net/liyuan123zhouhui/article/details/70698264
+            #     update_op = [mean_running.assign(mean_running * decay + mean * (1 - decay)), variance_running.assign(variance_running * decay + variance * (1 - decay))]
+            #     # 指定先执行均值方差的更新运算 见 http://blog.csdn.net/u012436149/article/details/72084744
+            #     with tf.control_dependencies(update_op):
+            #         return tf.identity(mean), tf.identity(variance)
+            # # 条件运算(https://applenob.github.io/tf_9.html) 这里指定为FALSE，所以一直是返回lambda: (mean_running, variance_running)，是不进行指数衰减的
+            # m, v = tf.cond(tf.Variable(False, trainable=False, collections=[tf.GraphKeys.LOCAL_VARIABLES]), update_running_stat, lambda: (mean_running, variance_running))
+            # out = tf.nn.batch_normalization(out, m, v, beta, gamma, 1e-8)
+
+            # *********上边注释掉的代码和下边的一行的作用一样（基本一样），特征归一化，特征值控制在[-1,1]之间********
+            out = batch_norm(out, decay=0.99, updates_collections=None, is_training=True)
         if activation == 'tanh':
             out = tf.nn.tanh(out)
         if activation == 'sigmoid':
@@ -139,7 +148,9 @@ def conv1d_layer(input_tensor, size, dim, activation, scale, bias):
 
         conv1d_index += 1
         return out
-# aconv1d_layer
+# aconv1d_layer 空洞卷积 用一句话概括就是，在不用pooling的情况下扩大感受野（pooling层会导致信息损失）
+# 在一般的卷积后我们习惯加上pooling层增加感受野，而空洞卷积则无需pooling层，rate参数是卷积核纬度扩增量，感受野因此过大了
+# 参考 https://blog.csdn.net/guyuealian/article/details/86239099
 aconv1d_index = 0
 def aconv1d_layer(input_tensor, size, rate, activation, scale, bias):
     global aconv1d_index
@@ -148,21 +159,25 @@ def aconv1d_layer(input_tensor, size, rate, activation, scale, bias):
         W = tf.get_variable('W', (1, size, shape[-1], shape[-1]), dtype=tf.float32, initializer=tf.random_uniform_initializer(minval=-scale, maxval=scale))
         if bias:
             b = tf.get_variable('b', [shape[-1]], dtype=tf.float32, initializer=tf.constant_initializer(0))
+        # tf.nn.atrous_conv2d空洞卷积操作，为了使用atrous_conv2d空洞卷积需要将纬度增加到2d+通道，所以扩增了一个维度
         out = tf.nn.atrous_conv2d(tf.expand_dims(input_tensor, dim=1), W, rate=rate, padding='SAME')
         out = tf.squeeze(out, [1])
         if not bias:
-            beta = tf.get_variable('beta', shape[-1], dtype=tf.float32, initializer=tf.constant_initializer(0))
-            gamma = tf.get_variable('gamma', shape[-1], dtype=tf.float32, initializer=tf.constant_initializer(1))
-            mean_running = tf.get_variable('mean', shape[-1], dtype=tf.float32, initializer=tf.constant_initializer(0))
-            variance_running = tf.get_variable('variance', shape[-1], dtype=tf.float32, initializer=tf.constant_initializer(1))
-            mean, variance = tf.nn.moments(out, axes=list(range(len(out.get_shape()) - 1)))
-            def update_running_stat():
-                decay = 0.99
-                update_op = [mean_running.assign(mean_running * decay + mean * (1 - decay)), variance_running.assign(variance_running * decay + variance * (1 - decay))]
-                with tf.control_dependencies(update_op):
-                    return tf.identity(mean), tf.identity(variance)
-                m, v = tf.cond(tf.Variable(False, trainable=False, collections=[tf.GraphKeys.LOCAL_VARIABLES]), update_running_stat, lambda: (mean_running, variance_running))
-                out = tf.nn.batch_normalization(out, m, v, beta, gamma, 1e-8)
+            # beta = tf.get_variable('beta', shape[-1], dtype=tf.float32, initializer=tf.constant_initializer(0))
+            # gamma = tf.get_variable('gamma', shape[-1], dtype=tf.float32, initializer=tf.constant_initializer(1))
+            # mean_running = tf.get_variable('mean', shape[-1], dtype=tf.float32, initializer=tf.constant_initializer(0))
+            # variance_running = tf.get_variable('variance', shape[-1], dtype=tf.float32, initializer=tf.constant_initializer(1))
+            # mean, variance = tf.nn.moments(out, axes=list(range(len(out.get_shape()) - 1)))
+            # def update_running_stat():
+            #     decay = 0.99
+            #     update_op = [mean_running.assign(mean_running * decay + mean * (1 - decay)), variance_running.assign(variance_running * decay + variance * (1 - decay))]
+            #     with tf.control_dependencies(update_op):
+            #         return tf.identity(mean), tf.identity(variance)
+            # m, v = tf.cond(tf.Variable(False, trainable=False, collections=[tf.GraphKeys.LOCAL_VARIABLES]), update_running_stat, lambda: (mean_running, variance_running))
+            # out = tf.nn.batch_normalization(out, m, v, beta, gamma, 1e-8)
+
+            # *********上边注释掉的代码和下边的一行的作用一样（基本一样），特征归一化，特征值控制在[-1,1]之间********
+            out = batch_norm(out, decay=0.99, updates_collections=None, is_training=True)
         if activation == 'tanh':
             out = tf.nn.tanh(out)
         if activation == 'sigmoid':
@@ -184,7 +199,7 @@ def speech_to_text_network(n_dim=128, n_blocks=3):
     for _ in range(n_blocks):
         for r in [1, 2, 4, 8, 16]:
             out, s = residual_block(out, size=7, rate=r)
-            skip += s
+            skip += s #这里不停地叠加是能更好的提取特征吗？如果上一行改成  _, s = residual_block(out, size=7, rate=r)呢？这样skip就变成入参input_sensor不变，而叠加不同空洞卷积的结果
 
     logit_ = conv1d_layer(skip, size=1, dim=skip.get_shape().as_list()[-1], activation='tanh', scale=0.08, bias=False)
     logit = conv1d_layer(logit_, size=1, dim=words_size, activation=None, scale=0.04, bias=True)
@@ -231,6 +246,7 @@ def train_speech_to_text_network():
     lr = tf.Variable(0.001, dtype=tf.float32, trainable=False)
     optimizer = MaxPropOptimizer(learning_rate=lr, beta2=0.99)
     var_list = [t for t in tf.trainable_variables()]
+    # optimizer.compute_gradients()梯度下降的开始一步，optimizer.apply_gradients()后续的梯度下降操作步骤 参考：https://blog.csdn.net/NockinOnHeavensDoor/article/details/80632677
     gradient = optimizer.compute_gradients(loss, var_list=var_list)
     optimizer_op = optimizer.apply_gradients(gradient)
 
@@ -256,11 +272,12 @@ train_speech_to_text_network()
 
 # 语音识别
 # 把batch_size改为1
+batch_size = 1
 def speech_to_text(wav_file):
     wav, sr = librosa.load(wav_file, mono=True)
     mfcc = np.transpose(np.expand_dims(librosa.feature.mfcc(wav, sr), axis=0), [0,2,1])
 
-    logit = speech_to_text_network()
+    logit = speech_to_text_network() #网络最终的特征输出logit
 
     saver = tf.train.Saver()
     with tf.Session() as sess:
