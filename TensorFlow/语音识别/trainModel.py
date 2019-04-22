@@ -256,7 +256,7 @@ def train_speech_to_text_network():
 
         saver = tf.train.Saver(tf.global_variables())
 
-        for epoch in range(16):#这里训练的周期还是太少loss还是会很大，条件允许则需要更多的周期
+        for epoch in range(16):#这里训练的周期还是太少loss还是会很大，GPU条件允许的话建议更多的周期
             sess.run(tf.assign(lr, 0.001 * (0.97 ** epoch)))
 
             global pointer
