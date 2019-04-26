@@ -123,24 +123,24 @@ def conv1d_layer(input_tensor, size, dim, activation, scale, bias):
         if not bias:#如果不适用偏置值，就进行特征归一化操作
             # 特征归一化
 
-            # beta = tf.get_variable('beta', dim, dtype=tf.float32, initializer=tf.constant_initializer(0))
-            # gamma = tf.get_variable('gamma', dim, dtype=tf.float32, initializer=tf.constant_initializer(1))
-            # mean_running = tf.get_variable('mean', dim, dtype=tf.float32, initializer=tf.constant_initializer(0))
-            # variance_running = tf.get_variable('variance', dim, dtype=tf.float32, initializer=tf.constant_initializer(1))
-            # mean, variance = tf.nn.moments(out, axes=list(range(len(out.get_shape()) - 1)))
-            # def update_running_stat():
-            #     decay = 0.99
-            #     # 定义了均值方差指数衰减 见 http://blog.csdn.net/liyuan123zhouhui/article/details/70698264
-            #     update_op = [mean_running.assign(mean_running * decay + mean * (1 - decay)), variance_running.assign(variance_running * decay + variance * (1 - decay))]
-            #     # 指定先执行均值方差的更新运算 见 http://blog.csdn.net/u012436149/article/details/72084744
-            #     with tf.control_dependencies(update_op):
-            #         return tf.identity(mean), tf.identity(variance)
-            # # 条件运算(https://applenob.github.io/tf_9.html) 这里指定为FALSE，所以一直是返回lambda: (mean_running, variance_running)，是不进行指数衰减的
-            # m, v = tf.cond(tf.Variable(False, trainable=False, collections=[tf.GraphKeys.LOCAL_VARIABLES]), update_running_stat, lambda: (mean_running, variance_running))
-            # out = tf.nn.batch_normalization(out, m, v, beta, gamma, 1e-8)
+            beta = tf.get_variable('beta', dim, dtype=tf.float32, initializer=tf.constant_initializer(0))
+            gamma = tf.get_variable('gamma', dim, dtype=tf.float32, initializer=tf.constant_initializer(1))
+            mean_running = tf.get_variable('mean', dim, dtype=tf.float32, initializer=tf.constant_initializer(0))
+            variance_running = tf.get_variable('variance', dim, dtype=tf.float32, initializer=tf.constant_initializer(1))
+            mean, variance = tf.nn.moments(out, axes=list(range(len(out.get_shape()) - 1)))
+            def update_running_stat():
+                decay = 0.99
+                # 定义了均值方差指数衰减 见 http://blog.csdn.net/liyuan123zhouhui/article/details/70698264
+                update_op = [mean_running.assign(mean_running * decay + mean * (1 - decay)), variance_running.assign(variance_running * decay + variance * (1 - decay))]
+                # 指定先执行均值方差的更新运算 见 http://blog.csdn.net/u012436149/article/details/72084744
+                with tf.control_dependencies(update_op):
+                    return tf.identity(mean), tf.identity(variance)
+            # 条件运算(https://applenob.github.io/tf_9.html) 这里指定为FALSE，所以一直是返回lambda: (mean_running, variance_running)，是不进行指数衰减的
+            m, v = tf.cond(tf.Variable(False, trainable=False, collections=[tf.GraphKeys.LOCAL_VARIABLES]), update_running_stat, lambda: (mean_running, variance_running))
+            out = tf.nn.batch_normalization(out, m, v, beta, gamma, 1e-8)
 
             # *********上边注释掉的代码和下边的一行的作用一样（基本一样），特征归一化，特征值控制在[-1,1]之间********
-            out = batch_norm(out, decay=0.99, updates_collections=None, is_training=True)
+            # out = batch_norm(out, decay=0.99, updates_collections=None, is_training=True)
         if activation == 'tanh':
             out = tf.nn.tanh(out)
         if activation == 'sigmoid':
@@ -163,21 +163,21 @@ def aconv1d_layer(input_tensor, size, rate, activation, scale, bias):
         out = tf.nn.atrous_conv2d(tf.expand_dims(input_tensor, dim=1), W, rate=rate, padding='SAME')
         out = tf.squeeze(out, [1])
         if not bias:
-            # beta = tf.get_variable('beta', shape[-1], dtype=tf.float32, initializer=tf.constant_initializer(0))
-            # gamma = tf.get_variable('gamma', shape[-1], dtype=tf.float32, initializer=tf.constant_initializer(1))
-            # mean_running = tf.get_variable('mean', shape[-1], dtype=tf.float32, initializer=tf.constant_initializer(0))
-            # variance_running = tf.get_variable('variance', shape[-1], dtype=tf.float32, initializer=tf.constant_initializer(1))
-            # mean, variance = tf.nn.moments(out, axes=list(range(len(out.get_shape()) - 1)))
-            # def update_running_stat():
-            #     decay = 0.99
-            #     update_op = [mean_running.assign(mean_running * decay + mean * (1 - decay)), variance_running.assign(variance_running * decay + variance * (1 - decay))]
-            #     with tf.control_dependencies(update_op):
-            #         return tf.identity(mean), tf.identity(variance)
-            # m, v = tf.cond(tf.Variable(False, trainable=False, collections=[tf.GraphKeys.LOCAL_VARIABLES]), update_running_stat, lambda: (mean_running, variance_running))
-            # out = tf.nn.batch_normalization(out, m, v, beta, gamma, 1e-8)
+            beta = tf.get_variable('beta', shape[-1], dtype=tf.float32, initializer=tf.constant_initializer(0))
+            gamma = tf.get_variable('gamma', shape[-1], dtype=tf.float32, initializer=tf.constant_initializer(1))
+            mean_running = tf.get_variable('mean', shape[-1], dtype=tf.float32, initializer=tf.constant_initializer(0))
+            variance_running = tf.get_variable('variance', shape[-1], dtype=tf.float32, initializer=tf.constant_initializer(1))
+            mean, variance = tf.nn.moments(out, axes=list(range(len(out.get_shape()) - 1)))
+            def update_running_stat():
+                decay = 0.99
+                update_op = [mean_running.assign(mean_running * decay + mean * (1 - decay)), variance_running.assign(variance_running * decay + variance * (1 - decay))]
+                with tf.control_dependencies(update_op):
+                    return tf.identity(mean), tf.identity(variance)
+            m, v = tf.cond(tf.Variable(False, trainable=False, collections=[tf.GraphKeys.LOCAL_VARIABLES]), update_running_stat, lambda: (mean_running, variance_running))
+            out = tf.nn.batch_normalization(out, m, v, beta, gamma, 1e-8)
 
             # *********上边注释掉的代码和下边的一行的作用一样（基本一样），特征归一化，特征值控制在[-1,1]之间********
-            out = batch_norm(out, decay=0.99, updates_collections=None, is_training=True)
+            # out = batch_norm(out, decay=0.99, updates_collections=None, is_training=True)
         if activation == 'tanh':
             out = tf.nn.tanh(out)
         if activation == 'sigmoid':
@@ -266,7 +266,7 @@ def train_speech_to_text_network():
                 train_loss, _,logit_ = sess.run([loss, optimizer_op,logit], feed_dict={X: batches_wavs, Y: batches_labels})
                 print(epoch, batch, train_loss)
             if epoch % 5 == 0:
-                saver.save(sess, 'speech.module', global_step=epoch)
+                saver.save(sess, 'model/speech.model', global_step=epoch)
 
 # 训练
 train_speech_to_text_network()

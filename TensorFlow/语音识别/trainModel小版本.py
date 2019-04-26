@@ -81,7 +81,7 @@ wav_max_len = 673  # 673 可以将下边的计算wav_max_len的过程注释掉 �
 #         wav_max_len = len(mfcc)
 print("最长的语音:", wav_max_len)
 
-batch_size = 1
+batch_size = 16
 n_batch = len(wav_files) // batch_size
 
 pointer = 0 #指针 指向下一个被从wav_files中读取的文件位置
@@ -256,19 +256,17 @@ def train_speech_to_text_network():
 
         saver = tf.train.Saver(tf.global_variables())
 
-        for epoch in range(16):
+        for epoch in range(300):
             sess.run(tf.assign(lr, 0.001 * (0.97 ** epoch)))
 
             global pointer
             pointer = 0
-            for _ in range(20):
-                for batch in range(n_batch):
-                    batches_wavs, batches_labels = get_next_batches(batch_size)
-                    train_loss, _,logit_ = sess.run([loss, optimizer_op,logit], feed_dict={X: batches_wavs, Y: batches_labels})
-                    print(epoch, batch, train_loss)
-                if epoch % 5 == 0:
-                    saver.save(sess, 'speech.module', global_step=epoch)
-                pointer = 0 #位置重新指向0 重新取
+            for batch in range(n_batch):
+                batches_wavs, batches_labels = get_next_batches(batch_size)
+                train_loss, _,logit_ = sess.run([loss, optimizer_op,logit], feed_dict={X: batches_wavs, Y: batches_labels})
+                print(epoch, batch, train_loss)
+            if epoch % 5 == 0:
+                saver.save(sess, 'model/speech.model', global_step=epoch)
 
 # 训练
 train_speech_to_text_network()
@@ -276,21 +274,25 @@ train_speech_to_text_network()
 # 语音识别
 # 把batch_size改为1
 def speech_to_text(wav_file):
-    wav, sr = librosa.load(wav_file, mono=True)
-    mfcc = np.transpose(np.expand_dims(librosa.feature.mfcc(wav, sr), axis=0), [0,2,1])
-
+    wav, sr = librosa.load(wav_file, mono=True)  # 读取音频文件
+    mfcc = np.transpose(librosa.feature.mfcc(wav, sr), [1, 0]).tolist()
+    while len(mfcc) < wav_max_len:
+        mfcc.append([0] * 20)
+    mfcc = np.expand_dims(mfcc, axis=0)
     logit = speech_to_text_network() #网络最终的特征输出logit [batch_size,?,词汇表大小: 2666]
 
     saver = tf.train.Saver()
     with tf.Session() as sess:
-        saver.restore(sess, tf.train.latest_checkpoint('.'))
+        saver.restore(sess, 'speech.module-15')
 
         decoded = tf.transpose(logit, perm=[1, 0, 2])
+        shape = decoded[0].shape
         # 对输入中给出的logits执行波束搜索解码 tf.nn.ctc_beam_search_decoder函数参考：https://blog.csdn.net/qq_32791307/article/details/81037578
         decoded, _ = tf.nn.ctc_beam_search_decoder(inputs=decoded, sequence_length=sequence_len, merge_repeated=False)
-        predict = tf.sparse_to_dense(decoded[0].indices, decoded[0].shape, decoded[0].values) + 1
+        # predict = tf.sparse_to_dense(decoded[0].indices,shape, decoded[0].values) + 1
         output = sess.run(decoded, feed_dict={X: mfcc})
-        #print(output)
+        for o in output[0].values:
+            print(words[int(o+1)])
 
 # speech_to_text("data\wav/train2\A5\A5_0.wav")
 # 从麦克风获得语音输入，使用上面的模型进行识别。

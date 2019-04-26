@@ -9,7 +9,7 @@ import librosa  # https://github.com/librosa/librosa
 # 数据备份地址 Mega: https://mega.nz/#F!idRSjL4A!cnCY0R2NjU77Jr0soe9OgQ    Baidu: http://pan.baidu.com/s/1hqKwE00
 # 训练样本路径
 wav_path = 'data/wav/train2'
-label_file = 'data/doc/trans/train.word2.txt'
+label_file = 'data/doc/trans/train.word.txt'
 
 # 获得训练用的wav文件路径列表
 def get_wav_files(wav_path=wav_path):
@@ -243,20 +243,21 @@ def train_speech_to_text_network():
     target = tf.SparseTensor(indices=indices, values=tf.gather_nd(Y, indices) - 1, dense_shape=tf.cast(tf.shape(Y), tf.int64))
     # tf.nn.ctc_loss函数参考https://www.cnblogs.com/Libo-Master/p/8109691.html
     loss = tf.nn.ctc_loss(target,logit, sequence_len, time_major=False)
+    loss = tf.reduce_mean(loss)
     # optimizer
     lr = tf.Variable(0.001, dtype=tf.float32, trainable=False)
-    optimizer = MaxPropOptimizer(learning_rate=lr, beta2=0.99)
-    var_list = [t for t in tf.trainable_variables()]
-    # optimizer.compute_gradients()梯度下降的开始一步，optimizer.apply_gradients()后续的梯度下降操作步骤 参考：https://blog.csdn.net/NockinOnHeavensDoor/article/details/80632677
-    gradient = optimizer.compute_gradients(loss, var_list=var_list)
-    optimizer_op = optimizer.apply_gradients(gradient)
-
+    # optimizer = MaxPropOptimizer(learning_rate=lr, beta2=0.99)
+    # var_list = [t for t in tf.trainable_variables()]
+    # # optimizer.compute_gradients()梯度下降的开始一步，optimizer.apply_gradients()后续的梯度下降操作步骤 参考：https://blog.csdn.net/NockinOnHeavensDoor/article/details/80632677
+    # gradient = optimizer.compute_gradients(loss, var_list=var_list)
+    # optimizer_op = optimizer.apply_gradients(gradient)
+    optimizer_op = tf.train.AdamOptimizer(lr).minimize(loss)
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
 
         saver = tf.train.Saver(tf.global_variables())
 
-        for epoch in range(160):
+        for epoch in range(300):
             sess.run(tf.assign(lr, 0.001 * (0.97 ** epoch)))
 
             global pointer
@@ -283,7 +284,7 @@ def speech_to_text(wav_file):
 
     saver = tf.train.Saver()
     with tf.Session() as sess:
-        saver.restore(sess, 'model/speech.model-40')
+        saver.restore(sess, 'model/speech.model-0')
 
         decoded = tf.transpose(logit, perm=[1, 0, 2])
         shape = decoded[0].shape
@@ -294,5 +295,5 @@ def speech_to_text(wav_file):
         for o in output[0].values:
             print(words[int(o+1)])
 
-speech_to_text("data\wav/train\A2\A2_10.wav")
+speech_to_text("data\wav/train\A2\A2_1.wav")
 # 从麦克风获得语音输入，使用上面的模型进行识别。

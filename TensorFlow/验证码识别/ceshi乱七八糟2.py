@@ -2,25 +2,17 @@
 #  coding:utf-8
 import tensorflow as tf
 import numpy as np
-images = np.random.random([5,2])
-label = np.asarray(range(0, 5))
-print([images, label])
-images = tf.cast(images, tf.float32)
-label = tf.cast(label, tf.int32)
-input_queue = tf.train.slice_input_producer([images, label], shuffle=False)
-# 将队列中数据打乱后再读取出来
-image_batch, label_batch = tf.train.shuffle_batch(input_queue, batch_size=10, num_threads=1, capacity=64, min_after_dequeue=1)
-with tf.Session() as sess:
-    # 线程的协调器
-    coord = tf.train.Coordinator()
-    # 开始在图表中收集队列运行器
-    threads = tf.train.start_queue_runners(sess, coord)
-    input_queue_v,image_batch_v, label_batch_v = sess.run([input_queue,image_batch, label_batch])
-    for j in range(5):
-        # print(image_batch_v.shape, label_batch_v[j])
-        print(image_batch_v[j]),
-        print(label_batch_v[j])
-    # 请求线程结束
-    coord.request_stop()
-    # 等待线程终止
-    coord.join(threads)
+from PIL import Image
+image_data = Image.open("captcha\images/0107.jpg")
+# 因为我们后边要用的Alexnet_v2网络需要输入数据为244*244所以图片要被非同比例拉伸（原来是160*60）
+image_data = image_data.resize(( 224, 224))
+# 模式“L”为灰色图像，它的每个像素用8个bit表示，0表示黑，255表示白，其他数字表示不同的灰度（0-255之间）
+r, g, b = image_data.split()
+r_arr = np.array(r).reshape((1,224,224))
+r1 = image_data.convert('L').split()
+image = np.array(r1[0]).reshape((1,224,224))
+image = image.astype( np.float32) / 255.0
+image = np.subtract(image, 0.5)
+image = np.multiply(image, 2.0)
+print(image)
+# print(r_arr)
