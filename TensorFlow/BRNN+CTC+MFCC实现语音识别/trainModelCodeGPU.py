@@ -38,7 +38,7 @@ def get_tran_texts(wavfiles, tran_path):
         fd = open(tran_file, 'r', encoding='UTF-8')
         text = fd.readline()
         wav_files.append(wav_file)
-        tran_texts.append(text.split('\n')[0])
+        tran_texts.append(text.split('\n')[0].replace(' ',''))
         fd.close()
     return wav_files,tran_texts
 
@@ -93,13 +93,11 @@ FIRST_INDEX = ord('a') - 1  # 0 is reserved to space
 def sparse_tuple_to_texts_ch(tuple, words):
     # 索引
     indices = tuple[0]
-    # 字向量
     values = tuple[1]
     results = [''] * tuple[2][0]
     for i in range(len(indices)):
         index = indices[i][0]
-        c = values[i]
-        c = ' ' if c == SPACE_INDEX else words[c]
+        c = words[values[i]]
         results[index] = results[index] + c
 
     return results
@@ -109,7 +107,10 @@ def sparse_tuple_to_texts_ch(tuple, words):
 def ndarray_to_text_ch(value, words):
     results = ''
     for i in range(len(value)):
-        results += words[value[i]]  # chr(value[i] + FIRST_INDEX)
+        if value[i]==len(words):
+            results +=' '
+        else:
+            results += words[value[i]]  # chr(value[i] + FIRST_INDEX)
     return results.replace('`', ' ')
 
 
@@ -334,9 +335,6 @@ words_size = len(words)
 word_num_map = dict(zip(words, range(words_size)))
 
 print('字表大小:', words_size)
-print('字表大小:', words[2665])
-print('字表大小:', words[2664])
-print('字表大小:', words[2666])
 
 # 梅尔倒谱系数的个数
 n_input = 26
@@ -403,9 +401,9 @@ used to create a variable in CPU memory.
 """
 
 
-def variable_on_cpu(name, shape, initializer):
-    # Use the /cpu:0 device for scoped operations
-    with tf.device('/cpu:0'):
+def variable_on_gpu(name, shape, initializer):
+    # Use the /gpu:0 device for scoped operations
+    with tf.device('/gpu:0'):
         # Create or get apropos variable
         var = tf.get_variable(name=name, shape=shape, initializer=initializer)
     return var
@@ -424,23 +422,23 @@ def BiRNN_model(batch_x, seq_length, n_input, n_context, n_character, keep_dropo
     # 使用clipped RELU activation and dropout.
     # 1st layer
     with tf.name_scope('fc1'):
-        b1 = variable_on_cpu('b1', [n_hidden_1], tf.random_normal_initializer(stddev=b_stddev))
-        h1 = variable_on_cpu('h1', [n_input + 2 * n_input * n_context, n_hidden_1],
+        b1 = variable_on_gpu('b1', [n_hidden_1], tf.random_normal_initializer(stddev=b_stddev))
+        h1 = variable_on_gpu('h1', [n_input + 2 * n_input * n_context, n_hidden_1],
                              tf.random_normal_initializer(stddev=h_stddev))
         layer_1 = tf.minimum(tf.nn.relu(tf.add(tf.matmul(batch_x, h1), b1)), relu_clip)
         layer_1 = tf.nn.dropout(layer_1, keep_dropout)
 
     # 2nd layer
     with tf.name_scope('fc2'):
-        b2 = variable_on_cpu('b2', [n_hidden_2], tf.random_normal_initializer(stddev=b_stddev))
-        h2 = variable_on_cpu('h2', [n_hidden_1, n_hidden_2], tf.random_normal_initializer(stddev=h_stddev))
+        b2 = variable_on_gpu('b2', [n_hidden_2], tf.random_normal_initializer(stddev=b_stddev))
+        h2 = variable_on_gpu('h2', [n_hidden_1, n_hidden_2], tf.random_normal_initializer(stddev=h_stddev))
         layer_2 = tf.minimum(tf.nn.relu(tf.add(tf.matmul(layer_1, h2), b2)), relu_clip)
         layer_2 = tf.nn.dropout(layer_2, keep_dropout)
 
     # 3rd layer
     with tf.name_scope('fc3'):
-        b3 = variable_on_cpu('b3', [n_hidden_3], tf.random_normal_initializer(stddev=b_stddev))
-        h3 = variable_on_cpu('h3', [n_hidden_2, n_hidden_3], tf.random_normal_initializer(stddev=h_stddev))
+        b3 = variable_on_gpu('b3', [n_hidden_3], tf.random_normal_initializer(stddev=b_stddev))
+        h3 = variable_on_gpu('h3', [n_hidden_2, n_hidden_3], tf.random_normal_initializer(stddev=h_stddev))
         layer_3 = tf.minimum(tf.nn.relu(tf.add(tf.matmul(layer_2, h3), b3)), relu_clip)
         layer_3 = tf.nn.dropout(layer_3, keep_dropout)
 
@@ -471,15 +469,15 @@ def BiRNN_model(batch_x, seq_length, n_input, n_context, n_character, keep_dropo
         outputs = tf.reshape(outputs, [-1, 2 * n_cell_dim])
 
     with tf.name_scope('fc5'):
-        b5 = variable_on_cpu('b5', [n_hidden_5], tf.random_normal_initializer(stddev=b_stddev))
-        h5 = variable_on_cpu('h5', [(2 * n_cell_dim), n_hidden_5], tf.random_normal_initializer(stddev=h_stddev))
+        b5 = variable_on_gpu('b5', [n_hidden_5], tf.random_normal_initializer(stddev=b_stddev))
+        h5 = variable_on_gpu('h5', [(2 * n_cell_dim), n_hidden_5], tf.random_normal_initializer(stddev=h_stddev))
         layer_5 = tf.minimum(tf.nn.relu(tf.add(tf.matmul(outputs, h5), b5)), relu_clip)
         layer_5 = tf.nn.dropout(layer_5, keep_dropout)
 
     with tf.name_scope('fc6'):
         # 全连接层用于softmax分类
-        b6 = variable_on_cpu('b6', [n_character], tf.random_normal_initializer(stddev=b_stddev))
-        h6 = variable_on_cpu('h6', [n_hidden_5, n_character], tf.random_normal_initializer(stddev=h_stddev))
+        b6 = variable_on_gpu('b6', [n_character], tf.random_normal_initializer(stddev=b_stddev))
+        h6 = variable_on_gpu('h6', [n_hidden_5, n_character], tf.random_normal_initializer(stddev=h_stddev))
         layer_6 = tf.add(tf.matmul(layer_5, h6), b6)
 
     # 将2维[amax_stepsize * batch_size, n_character]转成3维 time-major [amax_stepsize, batch_size, n_character].
@@ -552,6 +550,7 @@ with tf.Session() as sess:
     print(section.format('Run training epoch'))
 
     train_start = time.time()
+    floss = open("loss_value", 'w', encoding='UTF-8')
     for epoch in range(epochs):  # 样本集迭代次数
         epoch_start = time.time()
         if epoch < startepo:
@@ -578,8 +577,9 @@ with tf.Session() as sess:
             batch_cost, _ = sess.run([avg_loss, optimizer], feed_dict=feed)
             train_cost += batch_cost
             # 验证模型的准确率，比较耗时，我们训练的时候全力以赴，所以这里先不跑
-            if (batch + 1) % 20 == 0:
+            if (batch + 1) % 500 == 0:
                 print('loop:', batch, 'Train cost: ', train_cost / (batch + 1))
+                print('loop:', batch, 'Train cost: ', train_cost / (batch + 1),file=floss)
                 feed2 = {input_tensor: source, targets: sparse_labels, seq_length: source_lengths, keep_dropout: 1.0}
 
                 d, train_ler = sess.run([decoded[0], ler], feed_dict=feed2)
