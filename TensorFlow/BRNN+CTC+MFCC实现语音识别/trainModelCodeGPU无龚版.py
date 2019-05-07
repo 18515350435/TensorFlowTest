@@ -560,7 +560,11 @@ with tf.Session() as sess:
         train_cost = 0
         train_ler = 0
         next_idx = 0
-
+        # 每个epochs以同样的顺序打乱一次对应关系
+        state = np.random.get_state()
+        np.random.shuffle(wav_files)
+        np.random.set_state(state)
+        np.random.shuffle(labels)
         for batch in range(n_batches_per_epoch):  # 一次batch_size，取多少次
             # 取数据
             print('开始获取数据咯:' + str(batch))
@@ -573,7 +577,7 @@ with tf.Session() as sess:
             batch_cost, _ = sess.run([avg_loss, optimizer], feed_dict=feed)
             train_cost += batch_cost
             # 验证模型的准确率，比较耗时，我们训练的时候全力以赴，所以这里先不跑
-            if (batch + 1) % 100 == 0:
+            if (batch + 1) % 500 == 0:
                 print('loop:', batch, 'Train cost: ', train_cost / (batch + 1))
                 print('loop:', batch, 'Train cost: ', train_cost / (batch + 1),file=floss)
                 feed2 = {input_tensor: source, targets: sparse_labels, seq_length: source_lengths, keep_dropout: 1.0}
