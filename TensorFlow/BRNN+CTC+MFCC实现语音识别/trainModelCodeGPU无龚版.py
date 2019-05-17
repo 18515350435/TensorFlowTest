@@ -3,6 +3,7 @@
 # 参考说明博客 https://blog.csdn.net/rookie_wei/article/details/84527839
 # 原博客中的程序将空格算入label中，导致训练程序中无法准确定位空格字符的特征（因为任何两个发音之间的空格的mfcc特征都不一样），
 # 导致程序收敛极慢甚至无法收敛，手动将tran_texts中的空格都去除掉后程序开始收敛了
+# 下边这一条的操作可能导致程序收敛慢，不知为啥
 # 还有一点程序中输出的末尾的"龚"字是字符集中出现频率最小的那个，我们可以手动将字符集中的末尾再加一个空格words+=[""]
 import numpy as np
 from python_speech_features import mfcc
@@ -518,7 +519,7 @@ with tf.name_scope("accuracy"):
     ler = tf.reduce_mean(distance, name='label_error_rate')
 
 # 迭代次数
-epochs = 100
+epochs = 1000
 # 模型保存地址
 savedir = "saver/"
 # 如果该目录不存在，新建
@@ -561,10 +562,10 @@ with tf.Session() as sess:
         train_ler = 0
         next_idx = 0
         # 每个epochs以同样的顺序打乱一次对应关系
-        state = np.random.get_state()
-        np.random.shuffle(wav_files)
-        np.random.set_state(state)
-        np.random.shuffle(labels)
+        # state = np.random.get_state()
+        # np.random.shuffle(wav_files)
+        # np.random.set_state(state)
+        # np.random.shuffle(labels)
         for batch in range(n_batches_per_epoch):  # 一次batch_size，取多少次
             # 取数据
             print('开始获取数据咯:' + str(batch))
