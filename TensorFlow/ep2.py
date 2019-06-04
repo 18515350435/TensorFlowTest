@@ -1,13 +1,13 @@
 # coding: utf-8
-import tensorflow as tf
-from tensorflow.contrib.layers.python.layers import batch_norm
-c=2
-c = 1 if c == 0 else 2
-print(c)
-#平定县槐树铺乡新关村村民王培民一家六口人拥有两座小院八眼窑洞
-#平定夜槐树铺乡关村民王培民一家六口药拥两座小院八眼窑洞龚龚龚龚龚
-#平定县槐树铺乡村例村民王培民一家六口拥有两座小院八眼窑洞龚龚龚龚龚
-#平定县槐树铺越快村例给培民培民一家口拥两座小院八破窑洞龚龚龚龚
-#日本队在男子团体赛中获银牌队员岩井哲贤在个人全能赛也夺得一枚银牌
-#日本队在男子团体赛中获银牌队员岩岩哲贤在个人全能赛也夺得一枚银牌龚
-#日本队在男子团养赛在获银牌队员岩井哲贤个人全能赛也夺得一枚银牌龚
+import numpy as np
+a = [0,1,2,3,4,5,6]
+b = [10,11,12,13,14,15,16]
+print(a, b)
+# result:[0 1 2 3 4 5 6 7 8 9] [10 11 12 13 14 15 16 17 18 19]
+state = np.random.get_state()
+np.random.shuffle(a)
+np.random.set_state(state)
+np.random.shuffle(b)
+print(a)
+print(b)
+
