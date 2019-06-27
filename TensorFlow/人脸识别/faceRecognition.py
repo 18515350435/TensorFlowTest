@@ -1,33 +1,34 @@
-# Ê¶±ğÈËÁ³ ½«ÊäÈëÍ¼Óë¿âÖĞµÄÍ¼½øĞĞ¶Ô±ÈÕÒµ½ÏàËÆ¶ÈÂú×ãÌõ¼şµÄÊä³ö
-# µ¼Èë¿â
+# -*- coding: utf-8 -*-
+# è¯†åˆ«äººè„¸ å°†è¾“å…¥å›¾ä¸åº“ä¸­çš„å›¾è¿›è¡Œå¯¹æ¯”æ‰¾åˆ°ç›¸ä¼¼åº¦æ»¡è¶³æ¡ä»¶çš„è¾“å‡º
+# å¯¼å…¥åº“
 import os
 import face_recognition
 
-# ÖÆ×÷ËùÓĞ¿ÉÓÃÍ¼ÏñµÄÁĞ±í
+# åˆ¶ä½œæ‰€æœ‰å¯ç”¨å›¾åƒçš„åˆ—è¡¨
 images = os.listdir('images')
-# ¼ÓÔØÍ¼Ïñ
+# åŠ è½½å›¾åƒ
 image_to_be_matched = face_recognition.load_image_file('my_image.jpg')
 
-# ½«¼ÓÔØÍ¼Ïñ±àÂëÎªÌØÕ÷ÏòÁ¿
+# å°†åŠ è½½å›¾åƒç¼–ç ä¸ºç‰¹å¾å‘é‡
 
 image_to_be_matched_encoded = face_recognition.face_encodings(
 
     image_to_be_matched)[0]
 
-# ±éÀúÃ¿ÕÅÍ¼Ïñ
+# éå†æ¯å¼ å›¾åƒ
 for image in images:
-    # ¼ÓÔØÍ¼Ïñ
+    # åŠ è½½å›¾åƒ
     current_image = face_recognition.load_image_file("images/" + image)
-    # ½«¼ÓÔØÍ¼Ïñ±àÂëÎªÌØÕ÷ÏòÁ¿
+    # å°†åŠ è½½å›¾åƒç¼–ç ä¸ºç‰¹å¾å‘é‡
     current_image_encoded = face_recognition.face_encodings(current_image)[0]
 
-    # ½«ÄãµÄÍ¼ÏñºÍÍ¼Ïñ¶Ô±È£¬¿´ÊÇ·ñÎªÍ¬Ò»ÈË
+    # å°†ä½ çš„å›¾åƒå’Œå›¾åƒå¯¹æ¯”ï¼Œçœ‹æ˜¯å¦ä¸ºåŒä¸€äºº
 
     result = face_recognition.compare_faces(
 
-        [image_to_be_matched_encoded], current_image_encoded)
+        [image_to_be_matched_encoded], current_image_encoded,0.4)
 
-    # ¼ì²éÊÇ·ñÒ»ÖÂ
+    # æ£€æŸ¥æ˜¯å¦ä¸€è‡´
 
     if result[0] == True:
 
